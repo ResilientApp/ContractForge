@@ -8,7 +8,7 @@ const Navbar: React.FC = () => {
       <div className="navbar-container">
         {/* Logo Section */}
         <div className="navbar-logo">
-          <img src="public/ResAI transparent.png" alt="Logo" className="logo-image" />
+          <img src="ResAI transparent.png" alt="Logo" className="logo-image" />
         </div>
 
         {/* Center Brand Section */}
@@ -20,7 +20,7 @@ const Navbar: React.FC = () => {
         {/* GitHub Link */}
         <div className="navbar-actions">
           <a
-            href="https://github.com"
+            href="https://github.com/Bismanpal-Singh/ContractForge"
             target="_blank"
             rel="noopener noreferrer"
             className="github-link"
