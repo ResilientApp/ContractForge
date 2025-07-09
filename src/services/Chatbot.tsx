@@ -2,8 +2,10 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
-import { Send, Copy, Code, Sparkles, Bot, User } from "lucide-react"
+import { Send, Copy, Code, Sparkles, Bot, User, CheckCircle, AlertCircle, Info, AlertTriangle, Lightbulb } from "lucide-react"
 import { generateSmartContract } from "./deepseekService"
+import { ContractValidator } from "./contractValidator"
+import type { ValidationResult } from "./contractValidator"
 import "../components/ui/chatbot.css"
 
 interface Message {
@@ -12,6 +14,8 @@ interface Message {
   content: string
   timestamp: Date
   isCode?: boolean
+  compilationStatus?: "success" | "error" | "pending"
+  validation?: ValidationResult
 }
 
 const Chatbot: React.FC = () => {
@@ -20,7 +24,7 @@ const Chatbot: React.FC = () => {
       id: "1",
       type: "ai",
       content:
-        "Hello! I'm your Smart Contract Assistant, I can help you generate, explain, and optimize smart contracts for ResilientDB. What would you like to create today?",
+        "Hello! I'm your Smart Contract Assistant for ResilientDB. I can generate Solidity smart contracts from natural language descriptions.<br><br><strong>💡 Try these examples:</strong><br>• \"Create a simple token contract with transfer and balance functions\"<br>• \"Build a voting system where users can create and vote on proposals\"<br>• \"Make a multi-signature wallet that requires 2 out of 3 signatures\"<br>• \"Create a crowdfunding contract where people can contribute and claim rewards\"<br><br>What type of smart contract would you like to create?",
       timestamp: new Date(),
     },
   ])
@@ -29,16 +33,36 @@ const Chatbot: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  const isNearBottom = () => {
+    const container = document.querySelector('.messages-container') as HTMLElement;
+    if (!container) return true;
+    
+    const threshold = 100; // pixels from bottom
+    return container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
+  }
+
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    const container = document.querySelector('.messages-container') as HTMLElement;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
   }
 
   useEffect(() => {
-    // Only scroll to bottom when there are more than 1 message (initial welcome message)
+    // Always scroll chat to bottom when new message is added (like normal chatbots)
     if (messages.length > 1) {
       scrollToBottom()
     }
   }, [messages])
+
+  const validateSolidityCode = (code: string): boolean => {
+    // Basic validation - check for essential Solidity elements
+    const hasPragma = code.includes("pragma solidity");
+    const hasContract = code.includes("contract ");
+    const hasFunction = code.includes("function ");
+    
+    return hasPragma && hasContract && hasFunction;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,12 +81,16 @@ const Chatbot: React.FC = () => {
 
     try {
       const response = await generateSmartContract(input.trim())
+      const isSolidityCode = response.includes("pragma solidity") && response.includes("contract ") && response.includes("function ");
+      
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: "ai",
         content: response,
         timestamp: new Date(),
-        isCode: response.includes("contract ") || response.includes("pragma solidity"),
+        isCode: isSolidityCode,
+        compilationStatus: isSolidityCode ? (validateSolidityCode(response) ? "success" : "error") : undefined,
+        validation: isSolidityCode ? ContractValidator.validateContract(response) : undefined,
       }
       setMessages((prev) => [...prev, aiMessage])
     } catch (error) {
@@ -94,6 +122,28 @@ const Chatbot: React.FC = () => {
     adjustTextareaHeight()
   }, [input])
 
+  const getCompilationStatusIcon = (status: string) => {
+    switch (status) {
+      case "success":
+        return <CheckCircle size={16} className="text-green-500" />
+      case "error":
+        return <AlertCircle size={16} className="text-red-500" />
+      default:
+        return null
+    }
+  }
+
+  const getCompilationStatusText = (status: string) => {
+    switch (status) {
+      case "success":
+        return "Valid Solidity"
+      case "error":
+        return "Invalid Structure"
+      default:
+        return ""
+    }
+  }
+
   return (
     <div className="chatbot-container">
       <div className="chatbot-header">
@@ -118,6 +168,12 @@ const Chatbot: React.FC = () => {
                   <div className="code-header">
                     <Code size={16} />
                     <span>Smart Contract</span>
+                    {message.compilationStatus && (
+                      <div className="compilation-status">
+                        {getCompilationStatusIcon(message.compilationStatus)}
+                        <span className="status-text">{getCompilationStatusText(message.compilationStatus)}</span>
+                      </div>
+                    )}
                     <button onClick={() => copyToClipboard(message.content)} className="copy-button">
                       <Copy size={14} />
                     </button>
@@ -125,9 +181,81 @@ const Chatbot: React.FC = () => {
                   <pre className="code-content">
                     <code>{message.content}</code>
                   </pre>
+                  {message.validation && (
+                    <div className="validation-panel">
+                      <div className="validation-header">
+                        <Info size={16} />
+                        <span>Contract Analysis</span>
+                      </div>
+                      <div className="validation-content">
+                        <div className="contract-info">
+                          <h4>Contract: {message.validation.contractInfo.name}</h4>
+                          <div className="info-grid">
+                            <div>
+                              <strong>Functions:</strong> {message.validation.contractInfo.functions.length}
+                            </div>
+                            <div>
+                              <strong>Events:</strong> {message.validation.contractInfo.events.length}
+                            </div>
+                            <div>
+                              <strong>State Variables:</strong> {message.validation.contractInfo.stateVariables.length}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {message.validation.errors.length > 0 && (
+                          <div className="validation-section errors">
+                            <div className="section-header">
+                              <AlertCircle size={14} />
+                              <span>Errors ({message.validation.errors.length})</span>
+                            </div>
+                            <ul>
+                              {message.validation.errors.map((error, index) => (
+                                <li key={index}>{error}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {message.validation.warnings.length > 0 && (
+                          <div className="validation-section warnings">
+                            <div className="section-header">
+                              <AlertTriangle size={14} />
+                              <span>Warnings ({message.validation.warnings.length})</span>
+                            </div>
+                            <ul>
+                              {message.validation.warnings.map((warning, index) => (
+                                <li key={index}>{warning}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {message.validation.suggestions.length > 0 && (
+                          <div className="validation-section suggestions">
+                            <div className="section-header">
+                              <Lightbulb size={14} />
+                              <span>Suggestions ({message.validation.suggestions.length})</span>
+                            </div>
+                            <ul>
+                              {message.validation.suggestions.map((suggestion, index) => (
+                                <li key={index}>{suggestion}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
-                <div className="text-content">{message.content}</div>
+                <div className="text-content" dangerouslySetInnerHTML={{ 
+                  __html: message.content
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/•/g, '•')
+                    .replace(/\n/g, '<br>')
+                }} />
               )}
               <div className="message-timestamp">
                 {message.timestamp.toLocaleTimeString([], {
@@ -151,7 +279,7 @@ const Chatbot: React.FC = () => {
                   <span></span>
                   <span></span>
                 </div>
-                <span className="loading-text">Generating smart contract...</span>
+                <span className="loading-text">Thinking...</span>
               </div>
             </div>
           </div>

@@ -1,4 +1,6 @@
 // DeepSeek API service for smart contract generation
+import { fewShotPrompt } from '../Prompts/FewshotPrompts';
+
 export async function generateSmartContract(prompt: string): Promise<string> {
     try {
       // Check if API key is configured
@@ -15,21 +17,33 @@ export async function generateSmartContract(prompt: string): Promise<string> {
         },
         body: JSON.stringify({
           model: 'deepseek-chat',
-          temperature: 0.7,
-          max_tokens: 2000,
+          temperature: 0.3, // Lower temperature for more consistent code generation
+          max_tokens: 4000, // Increased for longer contracts
           messages: [
             {
               role: 'system',
-              content: `You are ContractForge, a helpful AI assistant for generating smart contracts for ResilientDB. 
+              content: `You are ContractForge, a helpful AI assistant specialized in smart contracts for ResilientDB. 
 
-For general conversation, respond naturally and conversationally.
-For contract requests, generate contracts in the specified JSON format.
+You can:
+1. **Generate Solidity smart contracts** when users ask for contract creation
+2. **Explain and discuss** smart contract concepts, security, and best practices
+3. **Answer general questions** about blockchain, ResilientDB, and development
+4. **Provide guidance** on contract deployment and testing
 
-Be friendly, helpful, and explain things clearly.`
+When generating contracts:
+- Use proper Solidity syntax (>= 0.5.0)
+- Include security best practices
+- Add comprehensive error handling
+- Emit events for state changes
+- Implement proper access control
+- Optimize for gas efficiency
+
+For contract requests: Return clean, compilable Solidity code without markdown formatting.
+For explanations and discussions: Respond conversationally and helpfully.`
             },
             {
               role: 'user',
-              content: prompt
+              content: fewShotPrompt(prompt)
             }
           ]
         })
@@ -47,7 +61,23 @@ Be friendly, helpful, and explain things clearly.`
         throw new Error('No content received from API');
       }
 
-      return content;
+      // Clean up the response to ensure it's just Solidity code
+      let cleanedContent = content.trim();
+      
+      // Remove markdown code blocks if present
+      if (cleanedContent.startsWith('```solidity')) {
+        cleanedContent = cleanedContent.replace(/^```solidity\n/, '').replace(/\n```$/, '');
+      } else if (cleanedContent.startsWith('```')) {
+        cleanedContent = cleanedContent.replace(/^```\n/, '').replace(/\n```$/, '');
+      }
+      
+      // Remove any explanatory text before the pragma statement
+      const pragmaIndex = cleanedContent.indexOf('pragma solidity');
+      if (pragmaIndex > 0) {
+        cleanedContent = cleanedContent.substring(pragmaIndex);
+      }
+
+      return cleanedContent;
 
     } catch (error) {
       console.error("Error generating smart contract:", error);

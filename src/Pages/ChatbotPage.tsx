@@ -10,7 +10,7 @@ const ChatbotPage: React.FC = () => {
       <main className="flex-1 flex flex-col">
         <Chatbot />
       </main>
-      <Footer />
+      {/* <Footer /> */}
     </div>
   )
 }
