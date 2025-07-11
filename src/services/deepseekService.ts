@@ -1,6 +1,17 @@
 // DeepSeek API service for smart contract generation
 import { fewShotPrompt } from '../Prompts/FewshotPrompts';
 
+export interface JSONGenerationResult {
+  syntaxJSON: {
+    contract_name: string;
+    arguments: string;
+  };
+  exampleJSON: {
+    contract_name: string;
+    arguments: string;
+  };
+}
+
 export async function generateSmartContract(prompt: string): Promise<string> {
     try {
       // Check if API key is configured
@@ -106,5 +117,132 @@ I'm having trouble connecting to my AI service. This could be due to:
 
 Please check your internet connection and API configuration, then try again.`;
     }
+}
+  
+export async function generateJSONFromSolidity(solidityCode: string): Promise<JSONGenerationResult> {
+  try {
+    // Check if API key is configured
+    const apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
+    if (!apiKey || apiKey === 'sk-1234567890abcdef') {
+      throw new Error('DeepSeek API key not configured. Please add VITE_DEEPSEEK_API_KEY to your .env file.');
+    }
+
+    const jsonPrompt = `
+Generate JSON for this contract:
+
+\`\`\`solidity
+${solidityCode}
+\`\`\`
+
+Return EXACTLY:
+
+===EXAMPLE_JSON===
+{"contract_name":"ContractName","arguments":"\\"value1\\",\\"value2\\",123"}
+
+Rules: contract_name from Solidity, arguments as comma-separated values, strings with escaped quotes, numbers without quotes.`;
+
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+              body: JSON.stringify({
+          model: 'deepseek-chat',
+          temperature: 0.1, // Very low temperature for consistent JSON generation
+          max_tokens: 3000, // Increased to ensure both sections complete
+          messages: [
+          {
+            role: 'system',
+            content: 'You are a Solidity-to-ResilientDB JSON converter. Generate JSON configurations in the specified format.'
+          },
+          {
+            role: 'user',
+            content: jsonPrompt
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorData.error?.message || ''}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+    
+    if (!content) {
+      throw new Error('No content received from API');
+    }
+
+    // Parse the response to extract JSON section
+    const exampleMatch = content.match(/===EXAMPLE_JSON===\n([\s\S]*?)(?=\n|$)/);
+
+    if (!exampleMatch) {
+      console.error('Full AI Response:', content);
+      throw new Error('Invalid response format: missing EXAMPLE_JSON section');
+    }
+
+    const exampleJSONStr = exampleMatch[1].trim();
+    console.log('Raw Example JSON:', exampleJSONStr);
+    
+    // Remove any markdown code blocks if present
+    let cleanExampleJSON = exampleJSONStr.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    
+    // Fix common JSON formatting issues
+    cleanExampleJSON = cleanExampleJSON.replace(/^\s*{\s*/, '{').replace(/\s*}\s*$/, '}');
+    
+    console.log('Cleaned Example JSON:', cleanExampleJSON);
+    
+    // Check if example JSON is incomplete
+    if (!exampleJSONStr.includes('}') || exampleJSONStr.length < 10) {
+      console.error('Example JSON is incomplete:', exampleJSONStr);
+      throw new Error('AI response incomplete: Example JSON section is not properly formatted');
+    }
+    
+    let exampleJSON;
+    try {
+      exampleJSON = JSON.parse(cleanExampleJSON);
+    } catch (parseError) {
+      console.error('JSON Parse Error - Example:', cleanExampleJSON);
+      
+      // Try to fix common JSON issues
+      try {
+        // Remove any trailing commas
+        const fixedExample = cleanExampleJSON.replace(/,(\s*[}\]])/g, '$1');
+        exampleJSON = JSON.parse(fixedExample);
+      } catch (secondError) {
+        throw new Error(`JSON parsing failed: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
+      }
+    }
+
+    // Validate JSON structure
+    if (!exampleJSON.contract_name || typeof exampleJSON.arguments !== 'string') {
+      throw new Error('Invalid EXAMPLE_JSON structure');
+    }
+
+    return {
+      syntaxJSON: exampleJSON, // Use the same JSON for both sections
+      exampleJSON
+    };
+
+  } catch (error) {
+    console.error("Error generating JSON from Solidity:", error);
+    
+    if (error instanceof Error && error.message.includes('API key not configured')) {
+      throw new Error('DeepSeek API key not configured. Please add VITE_DEEPSEEK_API_KEY to your .env file.');
+    }
+
+    if (error instanceof Error && error.message.includes('Invalid response format')) {
+      throw new Error('Failed to parse AI response. Please try again.');
+    }
+
+    if (error instanceof Error && error.message.includes('JSON parsing failed')) {
+      throw new Error(`JSON parsing failed: ${error.message}. Please try again.`);
+    }
+
+    throw new Error(`JSON generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
   

@@ -3,10 +3,9 @@
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Send, Copy, Code, Sparkles, Bot, User, CheckCircle, AlertCircle, Info, AlertTriangle, Lightbulb, FileJson } from "lucide-react"
-import { generateSmartContract } from "./deepseekService"
+import { generateSmartContract, generateJSONFromSolidity } from "./deepseekService"
 import { ContractValidator } from "./contractValidator"
 import type { ValidationResult } from "./contractValidator"
-import { JSONGenerator } from "./jsonGenerator"
 import JSONModal from "../components/JSONModal"
 import Modal from "react-modal"
 import "../components/ui/chatbot.css"
@@ -39,6 +38,8 @@ const Chatbot: React.FC = () => {
   const [isJSONModalOpen, setIsJSONModalOpen] = useState(false)
   const [jsonConfig, setJsonConfig] = useState("")
   const [contractName, setContractName] = useState("")
+  const [exampleConfig, setExampleConfig] = useState("")
+  const [isGeneratingJSON, setIsGeneratingJSON] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -119,18 +120,20 @@ const Chatbot: React.FC = () => {
     navigator.clipboard.writeText(content)
   }
 
-  const generateJSONConfig = (contractCode: string) => {
+  const generateJSONConfig = async (contractCode: string) => {
     try {
-      const jsonConfig = JSONGenerator.generateResVaultJSON(contractCode);
-      const jsonString = JSON.stringify(jsonConfig, null, 2);
-      const contractName = JSONGenerator.generateResVaultJSON(contractCode).contract_name;
+      setIsGeneratingJSON(true);
+      const result = await generateJSONFromSolidity(contractCode);
       
-      setJsonConfig(jsonString);
-      setContractName(contractName);
+      setJsonConfig(JSON.stringify(result.syntaxJSON, null, 2));
+      setContractName(result.syntaxJSON.contract_name);
+      setExampleConfig(JSON.stringify(result.exampleJSON, null, 2));
       setIsJSONModalOpen(true);
     } catch (error) {
       console.error('Error generating JSON:', error);
-      alert('Error generating JSON configuration');
+      alert(`Error generating JSON configuration: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsGeneratingJSON(false);
     }
   }
 
@@ -198,12 +201,18 @@ const Chatbot: React.FC = () => {
                         <span className="status-text">{getCompilationStatusText(message.compilationStatus)}</span>
                       </div>
                     )}
-                    <button onClick={() => generateJSONConfig(message.content)} className="json-button" title="Generate ResVault JSON">
+                                        <button 
+                      onClick={() => generateJSONConfig(message.content)} 
+                      className="json-button" 
+                      title="Generate ResVault JSON"
+                      disabled={isGeneratingJSON}
+                    >
                       <FileJson size={18} />
-                      <span>Generate JSON</span>
+                      <span>{isGeneratingJSON ? 'Generating...' : 'Generate JSON'}</span>
                     </button>
                     <button onClick={() => copyToClipboard(message.content)} className="copy-button">
                       <Copy size={14} />
+                      <span>Copy</span>
                     </button>
                   </div>
                   <pre className="code-content">
@@ -321,6 +330,7 @@ const Chatbot: React.FC = () => {
         onClose={() => setIsJSONModalOpen(false)}
         jsonConfig={jsonConfig}
         contractName={contractName}
+        exampleConfig={exampleConfig}
       />
 
       <form onSubmit={handleSubmit} className="input-form">
