@@ -2,11 +2,17 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
-import { Send, Copy, Code, Sparkles, Bot, User, CheckCircle, AlertCircle, Info, AlertTriangle, Lightbulb } from "lucide-react"
+import { Send, Copy, Code, Sparkles, Bot, User, CheckCircle, AlertCircle, Info, AlertTriangle, Lightbulb, FileJson } from "lucide-react"
 import { generateSmartContract } from "./deepseekService"
 import { ContractValidator } from "./contractValidator"
 import type { ValidationResult } from "./contractValidator"
+import { JSONGenerator } from "./jsonGenerator"
+import JSONModal from "../components/JSONModal"
+import Modal from "react-modal"
 import "../components/ui/chatbot.css"
+
+// Initialize react-modal
+Modal.setAppElement('#root');
 
 interface Message {
   id: string
@@ -30,6 +36,9 @@ const Chatbot: React.FC = () => {
   ])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isJSONModalOpen, setIsJSONModalOpen] = useState(false)
+  const [jsonConfig, setJsonConfig] = useState("")
+  const [contractName, setContractName] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -110,6 +119,21 @@ const Chatbot: React.FC = () => {
     navigator.clipboard.writeText(content)
   }
 
+  const generateJSONConfig = (contractCode: string) => {
+    try {
+      const jsonConfig = JSONGenerator.generateResVaultJSON(contractCode);
+      const jsonString = JSON.stringify(jsonConfig, null, 2);
+      const contractName = JSONGenerator.generateResVaultJSON(contractCode).contract_name;
+      
+      setJsonConfig(jsonString);
+      setContractName(contractName);
+      setIsJSONModalOpen(true);
+    } catch (error) {
+      console.error('Error generating JSON:', error);
+      alert('Error generating JSON configuration');
+    }
+  }
+
   const adjustTextareaHeight = () => {
     const textarea = textareaRef.current
     if (textarea) {
@@ -174,6 +198,10 @@ const Chatbot: React.FC = () => {
                         <span className="status-text">{getCompilationStatusText(message.compilationStatus)}</span>
                       </div>
                     )}
+                    <button onClick={() => generateJSONConfig(message.content)} className="json-button" title="Generate ResVault JSON">
+                      <FileJson size={18} />
+                      <span>Generate JSON</span>
+                    </button>
                     <button onClick={() => copyToClipboard(message.content)} className="copy-button">
                       <Copy size={14} />
                     </button>
@@ -287,6 +315,13 @@ const Chatbot: React.FC = () => {
 
         <div ref={messagesEndRef} />
       </div>
+
+      <JSONModal
+        isOpen={isJSONModalOpen}
+        onClose={() => setIsJSONModalOpen(false)}
+        jsonConfig={jsonConfig}
+        contractName={contractName}
+      />
 
       <form onSubmit={handleSubmit} className="input-form">
         <div className="input-container">
