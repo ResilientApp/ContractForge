@@ -437,15 +437,28 @@
 }
 
 .resvault-icon {
-  width: 80px;
-  height: 80px;
-  background: linear-gradient(135deg, #10b981, #059669);
-  border-radius: 20px;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #232526 0%, #414345 100%);
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-bottom: 1.5rem;
   color: white;
-  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+.resvault-icon::after {
+  content: "";
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  width: 80%;
+  height: 30%;
+  background: linear-gradient(120deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 100%);
+  border-radius: 12px;
+  pointer-events: none;
 }
 
 .resvault-text {

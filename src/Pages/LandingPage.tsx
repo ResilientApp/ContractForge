@@ -2,10 +2,11 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Sparkles, Code, Shield, Zap, ArrowRight, CheckCircle, Rocket, Brain, Lock, Globe } from "lucide-react"
+import { Sparkles, Code, Shield, Zap, ArrowRight, CheckCircle, Rocket, Brain, Lock} from "lucide-react"
 import Navbar from "../components/Navbar"
 import Footer from "../components/Footer"
 import "../components/ui/LandingPage.css"
+import resilientdbLogo from "../assets/resilientdb.svg";
 
 type LandingPageProps = {}
 
@@ -153,7 +154,7 @@ contract TokenContract {
             <div className="resvault-card">
               <div className="resvault-content">
                 <div className="resvault-icon">
-                  <Globe size={32} />
+                  <img src={resilientdbLogo} alt="ResVault Logo" width={32} height={32} />
                 </div>
                 <div className="resvault-text">
                   <h3 className="resvault-title">ResVault Extension</h3>
@@ -165,12 +166,12 @@ contract TokenContract {
                 </div>
                 <div className="resvault-action">
                   <a
-                    href="https://chrome.google.com/webstore"
+                    href="https://chromewebstore.google.com/detail/ejlihnefafcgfajaomeeogdhdhhajamf?utm_source=item-share-cb"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="resvault-button"
                   >
-                    <span>Install ResVault</span>
+                    <span>Get ResVault for Chrome</span>
                     <ArrowRight size={16} />
                   </a>
                 </div>
@@ -185,7 +186,7 @@ contract TokenContract {
         <div className="section-container">
           <div className="section-header">
             <h2 className="section-title">How It Works</h2>
-            <p className="section-description">From idea to deployment in three simple steps</p>
+            <p className="section-description">From idea to deployment in four simple steps</p>
           </div>
 
           <div className="steps-container">
@@ -209,7 +210,7 @@ contract TokenContract {
           <div className="cta-content">
             <h2 className="cta-title">Ready to Build the Future?</h2>
             <p className="cta-description">
-              Join thousands of developers who are already using Contract Forge to create secure, efficient smart
+              Join the community of developers who are already using Contract Forge to create secure, efficient smart
               contracts powered by AI.
             </p>
 
