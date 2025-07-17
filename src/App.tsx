@@ -1,8 +1,12 @@
-import ChatbotPage from "./Pages/ChatbotPage"
+import AppRouter from "./services/AppRouter"
 import "./App.css"
 
 function App() {
-  return <ChatbotPage />
+  return (
+    <div className="App">
+      <AppRouter />
+    </div>
+  )
 }
 
 export default App

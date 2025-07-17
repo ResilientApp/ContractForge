@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
-import { Send, Copy, Code, Sparkles, Bot, User, CheckCircle, AlertCircle, Info, AlertTriangle, Lightbulb, FileJson } from "lucide-react"
+import { Send, Copy, Code, Sparkles, Bot, User, CheckCircle, AlertCircle, Info, AlertTriangle, Lightbulb, FileJson, Download } from "lucide-react"
 import { generateSmartContract, generateJSONFromSolidity } from "./deepseekService"
 import { ContractValidator } from "./contractValidator"
 import type { ValidationResult } from "./contractValidator"
@@ -120,6 +120,22 @@ const Chatbot: React.FC = () => {
     navigator.clipboard.writeText(content)
   }
 
+  const downloadSolidityFile = (content: string, contractName: string = "contract") => {
+    // Extract contract name from the code if possible
+    const contractMatch = content.match(/contract\s+(\w+)/);
+    const fileName = contractMatch ? `${contractMatch[1]}.sol` : `${contractName}.sol`;
+    
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   const generateJSONConfig = async (contractCode: string) => {
     try {
       setIsGeneratingJSON(true);
@@ -201,19 +217,6 @@ const Chatbot: React.FC = () => {
                         <span className="status-text">{getCompilationStatusText(message.compilationStatus)}</span>
                       </div>
                     )}
-                                        <button 
-                      onClick={() => generateJSONConfig(message.content)} 
-                      className="json-button" 
-                      title="Generate ResVault JSON"
-                      disabled={isGeneratingJSON}
-                    >
-                      <FileJson size={18} />
-                      <span>{isGeneratingJSON ? 'Generating...' : 'Generate JSON'}</span>
-                    </button>
-                    <button onClick={() => copyToClipboard(message.content)} className="copy-button">
-                      <Copy size={14} />
-                      <span>Copy</span>
-                    </button>
                   </div>
                   <pre className="code-content">
                     <code>{message.content}</code>
@@ -284,6 +287,34 @@ const Chatbot: React.FC = () => {
                       </div>
                     </div>
                   )}
+                  
+                  <div className="code-actions">
+                    <button 
+                      onClick={() => generateJSONConfig(message.content)} 
+                      className="json-button" 
+                      title="Generate ResVault JSON"
+                      disabled={isGeneratingJSON}
+                    >
+                      <FileJson size={16} />
+                      <span>{isGeneratingJSON ? 'Generating...' : 'Generate JSON'}</span>
+                    </button>
+                    <button 
+                      onClick={() => downloadSolidityFile(message.content)} 
+                      className="download-button"
+                      title="Download .sol file"
+                    >
+                      <Download size={16} />
+                      <span>Download (.sol)</span>
+                    </button>
+                    <button 
+                      onClick={() => copyToClipboard(message.content)} 
+                      className="copy-button"
+                      title="Copy to clipboard"
+                    >
+                      <Copy size={16} />
+                      <span>Copy</span>
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="text-content" dangerouslySetInnerHTML={{ 
