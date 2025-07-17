@@ -26,11 +26,6 @@ const LandingPage: React.FC<LandingPageProps> = () => {
         "Built-in security best practices and vulnerability detection to ensure your contracts are production-ready.",
     },
     {
-      icon: <Code size={24} />,
-      title: "Multi-Standard Support",
-      description: "Generate contracts for ERC-20, ERC-721, ERC-1155, and custom implementations with ease.",
-    },
-    {
       icon: <Zap size={24} />,
       title: "Instant Deployment",
       description: "Get deployment-ready Solidity code with comprehensive documentation and gas optimization.",
@@ -39,11 +34,6 @@ const LandingPage: React.FC<LandingPageProps> = () => {
       icon: <Lock size={24} />,
       title: "ResilientDB Integration",
       description: "Seamlessly deploy to ResilientDB for enhanced security and performance in blockchain applications.",
-    },
-    {
-      icon: <Globe size={24} />,
-      title: "Cross-Chain Compatible",
-      description: "Generate contracts compatible with Ethereum, Polygon, BSC, and other EVM-compatible networks.",
     },
   ]
 
@@ -60,8 +50,13 @@ const LandingPage: React.FC<LandingPageProps> = () => {
     },
     {
       number: "03",
-      title: "Review & Deploy",
-      description: "Review the generated contract, make adjustments, and deploy to your preferred blockchain.",
+      title: "Download Files",
+      description: "Download the generated Solidity smart contract and JSON configuration files to your device.",
+    },
+    {
+      number: "04",
+      title: "Deploy with ResVault",
+      description: "Deploy it on ResVault by connecting to ResilientDB mainnet and uploading both the files.",
     },
   ]
 
@@ -153,6 +148,34 @@ contract TokenContract {
                 <p className="feature-description">{feature.description}</p>
               </div>
             ))}
+          </div>
+          <div className="resvault-section">
+            <div className="resvault-card">
+              <div className="resvault-content">
+                <div className="resvault-icon">
+                  <Globe size={32} />
+                </div>
+                <div className="resvault-text">
+                  <h3 className="resvault-title">ResVault Extension</h3>
+                  <p className="resvault-description">
+                    Deploy your smart contracts seamlessly with ResVault, the official browser extension for
+                    ResilientDB. Connect to the mainnet, manage your contracts, and interact with the blockchain
+                    directly from your browser.
+                  </p>
+                </div>
+                <div className="resvault-action">
+                  <a
+                    href="https://chrome.google.com/webstore"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="resvault-button"
+                  >
+                    <span>Install ResVault</span>
+                    <ArrowRight size={16} />
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
