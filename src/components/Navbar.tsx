@@ -1,6 +1,7 @@
 import type React from "react"
 import { Github } from "lucide-react"
 import "./ui/Navbar.css"
+import { Link } from "react-router-dom";
 
 const Navbar: React.FC = () => {
   return (
@@ -8,14 +9,16 @@ const Navbar: React.FC = () => {
       <div className="navbar-container">
         {/* Logo Section */}
         <div className="navbar-logo">
-          <img src="ResAI transparent.png" alt="Logo" className="logo-image" />
+          <a href="https://resai.resilientdb.com" target="_blank" rel="noopener noreferrer">
+            <img src="ResAI transparent.png" alt="Logo" className="logo-image" />
+          </a>
         </div>
 
         {/* Center Brand Section */}
-        <div className="navbar-brand">
+        <Link to="/" className="navbar-brand" style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}>
           <h1 className="brand-title">Contract Forge</h1>
           <p className="brand-subtitle">Powered by ResilientDB</p>
-        </div>
+        </Link>
 
         {/* GitHub Link */}
         <div className="navbar-actions">

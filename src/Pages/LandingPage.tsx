@@ -2,16 +2,18 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Sparkles, Code, Shield, Zap, ArrowRight, CheckCircle, Rocket, Brain, Lock} from "lucide-react"
+import { Sparkles, Shield, Zap, ArrowRight, CheckCircle, Rocket, Brain, Lock} from "lucide-react"
 import Navbar from "../components/Navbar"
 import Footer from "../components/Footer"
 import "../components/ui/LandingPage.css"
 import resilientdbLogo from "../assets/resilientdb.svg";
+import { useNavigate } from "react-router-dom"
 
 type LandingPageProps = {}
 
 const LandingPage: React.FC<LandingPageProps> = () => {
   const [isHovered, setIsHovered] = useState(false)
+  const navigate = useNavigate()
 
   const features = [
     {
@@ -89,7 +91,7 @@ const LandingPage: React.FC<LandingPageProps> = () => {
             <div className="hero-actions">
               <button
                 className="launch-button"
-                onClick={() => (window as any).navigate?.("/chatbot")}
+                onClick={() => navigate("/chatbot")}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
               >
@@ -229,7 +231,7 @@ contract TokenContract {
               </div>
             </div>
 
-            <button className="cta-button" onClick={() => (window as any).navigate?.("/chatbot")}>
+            <button className="cta-button" onClick={() => navigate("/chatbot")}>
               <Sparkles size={20} />
               <span>Start Building Now</span>
             </button>

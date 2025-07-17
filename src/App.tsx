@@ -1,12 +1,17 @@
-import AppRouter from "./services/AppRouter"
-import "./App.css"
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import LandingPage from "./Pages/LandingPage";
+import ChatbotPage from "./Pages/ChatbotPage";
+import "./App.css";
 
 function App() {
   return (
-    <div className="App">
-      <AppRouter />
-    </div>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/chatbot" element={<ChatbotPage />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;

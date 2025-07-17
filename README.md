@@ -7,7 +7,6 @@ A modern, AI-powered smart contract generator that uses DeepSeek LLM to create i
 - **AI-Powered Generation**: Uses DeepSeek LLM to understand your requirements and generate appropriate smart contracts
 - **Dark Theme UI**: Beautiful, modern interface that matches your development tools
 - **Modular Architecture**: Clean, maintainable codebase with reusable components
-- **Automatic Fallback**: Graceful fallback to mock generation if API is unavailable
 - **Detailed Contract View**: Comprehensive contract analysis with method explanations
 - **ResilientDB Integration**: Generates contracts in the correct format for ResilientDB
 
@@ -32,10 +31,7 @@ cd smart-contract-generator
 npm install
 ```
 
-3. Configure your DeepSeek API key:
-   - Open `src/config/api.ts`
-   - Replace `'sk-1234567890abcdef'` with your actual DeepSeek API key
-   - Or set environment variables (see Configuration section below)
+3. Configure your DeepSeek API key (see Configuration section below)
 
 4. Start the development server:
 ```bash
@@ -52,25 +48,16 @@ npm run dev
 
 2. **Configure the API key** in one of these ways:
 
-   **Option A: Direct configuration**
-   ```typescript
-   // src/config/api.ts
-   export const API_CONFIG = {
-     DEEPSEEK: {
-       API_KEY: 'your_actual_deepseek_api_key_here',
-       BASE_URL: 'https://api.deepseek.com/v1',
-       MODEL: 'deepseek-chat'
-     }
-   };
-   ```
-
-   **Option B: Environment variables**
+   **Option A: Environment variables**
    ```bash
    # Create a .env file in the project root
    VITE_DEEPSEEK_API_KEY=your_actual_deepseek_api_key_here
    VITE_DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
    VITE_DEEPSEEK_MODEL=deepseek-chat
    ```
+
+   **Option B: Direct configuration**
+   - Edit the relevant service file in `src/services/` to include your API key (not recommended for production).
 
 ### Using the Generator
 
@@ -83,46 +70,39 @@ npm run dev
 
 3. **Review**: View the generated contract details, methods, and JSON format
 
-4. **Copy**: Use the generated JSON in your ResilientDB application
+4. **Copy or Download**: Use the generated Solidity or JSON in your ResilientDB application
 
 ## 🏗️ Architecture
 
-### Components
+### Main Components
 
-- **`Header`**: Application title and branding
-- **`PromptInput`**: Enhanced textarea for contract descriptions
-- **`GenerateButton`**: Interactive generation button with loading states
-- **`ContractOutput`**: JSON output with copy functionality
-- **`ContractDetails`**: Detailed contract view with tabs
+- **LandingPage**: Intro and onboarding
+- **ChatbotPage**: Main chat interface for contract generation
+- **Chatbot**: The core chat and contract generation logic
+- **Footer**: App footer and links
+- **Navbar**: App navigation and branding
+- **UI assets**: Custom CSS and SVGs for styling
 
 ### Services
 
-- **`LLMService`**: Handles communication with DeepSeek API
-- **`contractGenerator`**: Legacy hardcoded generator (deprecated)
-
-### Configuration
-
-- **`api.ts`**: Centralized API configuration for DeepSeek
+- **deepseekService.ts**: Handles communication with DeepSeek API
+- **contractValidator.ts**: Validates and analyzes generated contracts
 
 ### File Structure
 
 ```
 src/
-├── components/          # React components
-│   ├── Header.tsx
-│   ├── PromptInput.tsx
-│   ├── GenerateButton.tsx
-│   ├── ContractOutput.tsx
-│   └── ContractDetails.tsx
-├── services/           # Business logic
-│   ├── llmService.ts
-│   └── contractGenerator.ts
-├── config/            # Configuration
-│   └── api.ts
-├── App.tsx            # Main application
-├── main.tsx           # Entry point
-└── index.css          # Global styles
+├── components/          # React components (Navbar, Footer, etc.)
+├── Pages/               # Main pages (LandingPage, ChatbotPage)
+├── services/            # Business logic (deepseekService, contractValidator, Chatbot)
+├── assets/              # Images and SVGs
+├── App.tsx              # Main application (handles navigation)
+├── main.tsx             # Entry point
+├── index.css            # Global styles
+└── components/ui/       # UI-specific CSS
 ```
+
+- Navigation is handled via React state in `App.tsx`.
 
 ## 🔌 DeepSeek Integration
 
@@ -130,26 +110,18 @@ The application is configured to use DeepSeek's API for smart contract generatio
 
 - **Automatic API calls** to DeepSeek's chat completions endpoint
 - **Structured prompts** optimized for smart contract generation
-- **Error handling** with graceful fallback to mock generation
+- **Error handling** with user feedback
 - **Response parsing** to extract contract details and convert to ResilientDB format
 
 ### API Configuration
 
-The DeepSeek integration is configured in `src/config/api.ts`:
+The DeepSeek integration is configured via environment variables or directly in the service file:
 
-```typescript
-export const API_CONFIG = {
-  DEEPSEEK: {
-    API_KEY: 'your_api_key_here',
-    BASE_URL: 'https://api.deepseek.com/v1',
-    MODEL: 'deepseek-chat'
-  }
-};
+```env
+VITE_DEEPSEEK_API_KEY=your_api_key_here
+VITE_DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+VITE_DEEPSEEK_MODEL=deepseek-chat
 ```
-
-### Fallback Mechanism
-
-If the DeepSeek API is unavailable or returns an error, the application automatically falls back to a sophisticated mock generator that creates realistic contracts based on the user's prompt.
 
 ## 🎨 Customization
 
@@ -163,11 +135,7 @@ The application uses Tailwind CSS with a custom dark theme. You can customize:
 
 ### Contract Templates
 
-Modify the system prompt in `LLMService.buildSystemPrompt()` to change how contracts are generated.
-
-### API Configuration
-
-You can easily switch to other LLM providers by modifying the `LLMService` class and updating the configuration in `src/config/api.ts`.
+Modify the system prompt in the DeepSeek service to change how contracts are generated.
 
 ## 🚀 Deployment
 
@@ -208,7 +176,6 @@ If you encounter any issues:
 2. Verify your DeepSeek API key is correct
 3. Ensure you have a stable internet connection
 4. Check the DeepSeek API status page
-5. The app will fallback to mock generation if the API is unavailable
 
 ## 🔮 Future Enhancements
 
