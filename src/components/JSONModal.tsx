@@ -10,7 +10,7 @@ interface JSONModalProps {
   exampleConfig: string;
 }
 
-const JSONModal: React.FC<JSONModalProps> = ({ isOpen, onClose, jsonConfig, contractName, exampleConfig }) => {
+const JSONModal: React.FC<JSONModalProps> = ({ isOpen, onClose, jsonConfig, contractName }) => {
   const copyToClipboard = (content: string) => {
     navigator.clipboard.writeText(content);
     // You could add a toast notification here

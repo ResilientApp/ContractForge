@@ -43,14 +43,6 @@ const Chatbot: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const isNearBottom = () => {
-    const container = document.querySelector('.messages-container') as HTMLElement;
-    if (!container) return true;
-    
-    const threshold = 100; // pixels from bottom
-    return container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
-  }
-
   const scrollToBottom = () => {
     const container = document.querySelector('.messages-container') as HTMLElement;
     if (container) {

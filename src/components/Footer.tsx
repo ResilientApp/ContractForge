@@ -40,17 +40,6 @@ const Footer: React.FC = () => {
               <span>ResilientDB</span>
             </a>
 
-            <a
-              href="https://www.linkedin.com/in/bismanpal-singh/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="footer-link"
-              aria-label="Developer LinkedIn"
-            >
-              <Linkedin size={20} />
-              <span>Author</span>
-            </a>
-
             <a href="mailto:bpsanand@ucdavis.edu" className="footer-link" aria-label="Contact Us">
               <Mail size={20} />
               <span>Contact</span>

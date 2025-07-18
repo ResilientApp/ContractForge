@@ -1,7 +1,6 @@
 import type React from "react"
 import Navbar from "../components/Navbar"
 import Chatbot from "../services/Chatbot"
-import Footer from "../components/Footer"
 
 const ChatbotPage: React.FC = () => {
   return (

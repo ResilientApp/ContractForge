@@ -36,7 +36,7 @@ const LandingPage: React.FC<LandingPageProps> = () => {
     {
       icon: <Lock size={24} />,
       title: "ResilientDB Integration",
-      description: "Seamlessly deploy to ResilientDB for enhanced security and performance in blockchain applications.",
+      description: "Easily deploy to ResilientDB for enhanced security and performance in blockchain applications.",
     },
   ]
 
