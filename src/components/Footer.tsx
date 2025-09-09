@@ -19,7 +19,7 @@ const Footer: React.FC = () => {
           {/* Links Section */}
           <div className="footer-links">
             <a
-              href="https://github.com/Bismanpal-Singh/ContractForge"
+              href="https://github.com/ResilientApp/ContractForge"
               target="_blank"
               rel="noopener noreferrer"
               className="footer-link"

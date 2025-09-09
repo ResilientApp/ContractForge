@@ -156,6 +156,75 @@ The built files in `dist/` can be deployed to any static hosting service:
 
 **Important**: For production deployment, use environment variables to configure your API key instead of hardcoding it in the source code.
 
+## 🎃 Hacktoberfest 2025
+
+We're excited to participate in **Hacktoberfest 2025**! This is a great opportunity for developers of all skill levels to contribute to open source projects and earn some awesome swag.
+
+### 🎯 How to Participate
+
+1. **Sign up for Hacktoberfest 2025**
+   - Visit [hacktoberfest.com](https://hacktoberfest.com)
+   - Register with your GitHub account
+   - Choose between contributing to open source or planting trees
+
+2. **Find Issues to Work On**
+   - Look for issues labeled with `hacktoberfest` in our repository
+   - Check out `good first issue` labels for beginner-friendly tasks
+   - Browse our [Issues page](https://github.com/your-username/smart-contract-generator/issues) for available tasks
+
+3. **Contribution Guidelines**
+   - Fork this repository
+   - Create a new branch for your contribution: `git checkout -b feature/your-feature-name`
+   - Make your changes following our coding standards
+   - Test your changes thoroughly
+   - Submit a pull request with a clear description
+
+### 🏷️ Available Issue Types
+
+- **🟢 Good First Issues**: Perfect for first-time contributors
+- **🟡 Intermediate**: For developers with some experience
+- **🔴 Advanced**: For experienced developers looking for a challenge
+- **📚 Documentation**: Help improve our docs and guides
+- **🐛 Bug Fixes**: Help us squash bugs and improve stability
+
+### 🎁 What You Can Contribute
+
+- **New Features**: Add functionality to improve the smart contract generator
+- **UI/UX Improvements**: Enhance the user interface and experience
+- **Documentation**: Improve guides, tutorials, and code comments
+- **Testing**: Add unit tests, integration tests, or end-to-end tests
+- **Bug Fixes**: Help identify and fix issues
+- **Performance**: Optimize code and improve application performance
+- **Accessibility**: Make the application more accessible to all users
+
+### 📋 Pull Request Requirements
+
+To ensure your contribution is accepted:
+
+- [ ] Your code follows our existing style and conventions
+- [ ] You've tested your changes locally
+- [ ] Your pull request includes a clear description of changes
+- [ ] You've linked any related issues
+- [ ] Your commits are well-documented with clear messages
+
+### 🏆 Recognition
+
+All valid contributions will be:
+- Reviewed promptly by our maintainers
+- Merged if they meet our quality standards
+- Counted toward your Hacktoberfest 2025 progress
+- Acknowledged in our contributors list
+
+### 💬 Need Help?
+
+- Join our discussions in [GitHub Discussions](https://github.com/your-username/smart-contract-generator/discussions)
+- Check out our [Contributing Guide](CONTRIBUTING.md) for detailed information
+- Feel free to ask questions in issue comments
+
+**Happy Hacking! 🚀**
+
+---
+
 ## 🤝 Contributing
 
 1. Fork the repository
