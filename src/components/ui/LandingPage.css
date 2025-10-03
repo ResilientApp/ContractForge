@@ -2,12 +2,19 @@
   min-height: 100vh;
   background: linear-gradient(135deg, #0f0f17 0%, #1a1a2e 50%, #16213e 100%);
   color: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  padding-bottom: 2rem;
 }
 
 /* Hero Section */
 .hero-section {
   position: relative;
-  min-height: 100vh;
+  min-height: calc(100vh - 80px);
   display: flex;
   align-items: center;
   overflow: hidden;
