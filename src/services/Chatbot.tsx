@@ -2,16 +2,22 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
-import { Send, Copy, Code, Sparkles, Bot, User, CheckCircle, AlertCircle, Info, AlertTriangle, Lightbulb, FileJson, Download } from "lucide-react"
+import { Send, Copy, Code, Sparkles, Bot, User, CheckCircle, AlertCircle, Info, AlertTriangle, Lightbulb, FileJson, Download, Layout } from "lucide-react"
 import { generateSmartContract, generateJSONFromSolidity } from "./deepseekService"
 import { ContractValidator } from "./contractValidator"
 import type { ValidationResult } from "./contractValidator"
 import JSONModal from "../components/JSONModal"
+import TemplateSelector from "../components/TemplateSelector"
 import Modal from "react-modal"
 import "../components/ui/chatbot.css"
 
-// Initialize react-modal
-Modal.setAppElement('#root');
+// Initialize react-modal safely
+if (typeof document !== 'undefined') {
+  const rootElement = document.getElementById('root');
+  if (rootElement) {
+    Modal.setAppElement(rootElement);
+  }
+}
 
 interface Message {
   id: string
@@ -29,13 +35,14 @@ const Chatbot: React.FC = () => {
       id: "1",
       type: "ai",
       content:
-        "Hello! I'm your Smart Contract Assistant for ResilientDB. I can generate Solidity smart contracts from natural language descriptions.<br><br><strong>💡 Try these examples:</strong><br>• \"Create a simple token contract with transfer and balance functions\"<br>• \"Build a voting system where users can create and vote on proposals\"<br>• \"Make a multi-signature wallet that requires 2 out of 3 signatures\"<br>• \"Create a crowdfunding contract where people can contribute and claim rewards\"<br><br>What type of smart contract would you like to create?",
+        "Hello! I'm your Smart Contract Assistant for ResilientDB. I can generate Solidity smart contracts from natural language descriptions.<br><br><strong>💡 Try these examples:</strong><br>• \"Create a simple token contract with transfer and balance functions\"<br>• \"Build a voting system where users can create and vote on proposals\"<br>• \"Make a multi-signature wallet that requires 2 out of 3 signatures\"<br>• \"Create a crowdfunding contract where people can contribute and claim rewards\"<br>• Click the \"Templates\" button to browse pre-built contract templates<br><br>What type of smart contract would you like to create?",
       timestamp: new Date(),
     },
   ])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isJSONModalOpen, setIsJSONModalOpen] = useState(false)
+  const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false)
   const [jsonConfig, setJsonConfig] = useState("")
   const [contractName, setContractName] = useState("")
   const [exampleConfig, setExampleConfig] = useState("")
@@ -179,6 +186,19 @@ const Chatbot: React.FC = () => {
     }
   }
 
+  const handleTemplateSelect = (code: string, _templateName: string) => {
+    const aiMessage: Message = {
+      id: Date.now().toString(),
+      type: "ai",
+      content: code,
+      timestamp: new Date(),
+      isCode: true,
+      compilationStatus: validateSolidityCode(code) ? "success" : "error",
+      validation: ContractValidator.validateContract(code),
+    }
+    setMessages((prev) => [...prev, aiMessage])
+  }
+
   return (
     <div className="chatbot-container">
       <div className="chatbot-header">
@@ -191,6 +211,14 @@ const Chatbot: React.FC = () => {
             <p>Powered by DeepSeek AI</p>
           </div>
         </div>
+        <button 
+          className="template-button"
+          onClick={() => setIsTemplateSelectorOpen(true)}
+          title="Browse Templates"
+        >
+          <Layout size={20} />
+          <span>Templates</span>
+        </button>
       </div>
 
       <div className="messages-container">
@@ -377,6 +405,12 @@ const Chatbot: React.FC = () => {
           </button>
         </div>
       </form>
+
+      <TemplateSelector
+        isOpen={isTemplateSelectorOpen}
+        onClose={() => setIsTemplateSelectorOpen(false)}
+        onSelectTemplate={handleTemplateSelect}
+      />
     </div>
   )
 }
