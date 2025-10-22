@@ -1,8 +1,8 @@
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { X, Coins, Image, Vote, Shield, TrendingUp, ChevronRight, Sparkles } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import { getAllTemplates, type ContractTemplate } from "../templates"
-import { useNavigate } from 'react-router-dom'
 
 interface TemplateSelectorProps {
   isOpen: boolean
@@ -10,7 +10,7 @@ interface TemplateSelectorProps {
   onSelectTemplate: (code: string, templateName: string) => void
 }
 
-const categoryIcons: Record<string, any> = {
+const categoryIcons: Record<ContractTemplate['category'], LucideIcon> = {
   token: Coins,
   nft: Image,
   dao: Vote,
@@ -18,19 +18,19 @@ const categoryIcons: Record<string, any> = {
   defi: TrendingUp,
 }
 
-const difficultyColors: Record<string, string> = {
+const difficultyColors: Record<ContractTemplate['difficulty'], string> = {
   beginner: "difficulty-beginner",
   intermediate: "difficulty-intermediate",
   advanced: "difficulty-advanced",
 }
 
 const TemplateSelector: React.FC<TemplateSelectorProps> = ({ isOpen, onClose, onSelectTemplate }) => {
-  const [selectedCategory, setSelectedCategory] = useState<string>("all")
+  type ParameterValue = string | number | boolean
+  const [selectedCategory, setSelectedCategory] = useState<'all' | ContractTemplate['category']>("all")
   const [selectedTemplate, setSelectedTemplate] = useState<ContractTemplate | null>(null)
-  const [parameters, setParameters] = useState<Record<string, any>>({})
+  const [parameters, setParameters] = useState<Record<string, ParameterValue>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
   const dialogRef = useRef<HTMLDivElement | null>(null)
-  const navigate = useNavigate()
 
   // When opened inline, optionally focus the heading for accessibility
   useEffect(() => {
@@ -41,7 +41,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ isOpen, onClose, on
   }, [isOpen])
 
   const templates = getAllTemplates()
-  const categories = [
+  const categories: Array<{ id: 'all' | ContractTemplate['category']; label: string }> = [
     { id: "all", label: "All Templates" },
     { id: "token", label: "Tokens" },
     { id: "nft", label: "NFTs" },
@@ -57,7 +57,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ isOpen, onClose, on
 
   const handleTemplateSelect = (template: ContractTemplate) => {
     setSelectedTemplate(template)
-    const defaultParams: Record<string, any> = {}
+    const defaultParams: Record<string, ParameterValue> = {}
     template.parameters.forEach((param) => {
       if (param.defaultValue !== undefined) {
         defaultParams[param.name] = param.defaultValue
@@ -67,7 +67,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ isOpen, onClose, on
     setErrors({})
   }
 
-  const handleParameterChange = (paramName: string, value: any) => {
+  const handleParameterChange = (paramName: string, value: ParameterValue) => {
     setParameters((prev) => ({ ...prev, [paramName]: value }))
     
     // Clear error for this field
@@ -80,7 +80,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ isOpen, onClose, on
     }
   }
 
-  const validateField = (param: ContractTemplate['parameters'][number], rawValue: any, acc: Record<string,string>) => {
+  const validateField = (param: ContractTemplate['parameters'][number], rawValue: ParameterValue | undefined | null, acc: Record<string,string>) => {
     const value = rawValue
     const empty = value === undefined || value === "" || value === null
     if (param.required && empty) {
@@ -138,11 +138,11 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ isOpen, onClose, on
   if (!isOpen) return null
 
   return (
-    <div className="template-selector-overlay inline-mode" ref={dialogRef} aria-labelledby="template-selector-heading" role="region">
+    <div className="template-selector-overlay" ref={dialogRef} aria-labelledby="template-selector-heading" role="region">
       <div className="template-selector-modal">
         <div className="template-selector-header">
           <div className="header-content">
-            <button className="back-to-chatbot-btn" onClick={() => { handleClose(); navigate('/chatbot') }} aria-label="Back to Chatbot">←</button>
+            {/* <button className="back-to-chatbot-btn" onClick={() => { handleClose(); navigate('/chatbot') }} aria-label="Back to Chatbot">←</button> */}
             <Sparkles className="header-icon" size={24} />
             <div>
               <h2 id="template-selector-heading" tabIndex={-1}>Contract Templates</h2>
@@ -234,18 +234,22 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ isOpen, onClose, on
                       <div className="checkbox-wrapper">
                         <input
                           type="checkbox"
-                          checked={parameters[param.name] || false}
+                          checked={Boolean(parameters[param.name])}
                           onChange={(e) => handleParameterChange(param.name, e.target.checked)}
                         />
                       </div>
                     ) : (
                       <input
                         type={param.type === "number" ? "number" : "text"}
-                        value={parameters[param.name] || ""}
+                        value={
+                          param.type === 'number'
+                            ? (parameters[param.name] as number | string | undefined) ?? ""
+                            : (parameters[param.name] as string | undefined) ?? ""
+                        }
                         onChange={(e) =>
                           handleParameterChange(
                             param.name,
-                            param.type === "number" ? e.target.value : e.target.value
+                            param.type === "number" ? Number(e.target.value) : e.target.value
                           )
                         }
                         placeholder={param.placeholder}
