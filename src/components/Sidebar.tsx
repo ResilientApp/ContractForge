@@ -2,6 +2,7 @@ import { Sparkles, Layout, HomeIcon, SidebarIcon, SquarePenIcon, StarIcon } from
 import { Link } from "react-router-dom"
 import { listChats } from "@/hooks/useHistory"
 import { useSearchParams } from "react-router-dom"
+import useFavorites from "@/hooks/useFavorites"
 
 interface SidebarProps {
   isSidebarCollapsed: boolean
@@ -15,6 +16,7 @@ const Sidebar = ({ isSidebarCollapsed, setIsSidebarCollapsed, setIsTemplateSelec
   const chats = listChats()
   const [searchParams, setSearchParams] = useSearchParams()
   const chatId = searchParams.get("chatId")
+  const { favorites, toggleFavorite, isFavorite } = useFavorites()
 
   const handleChatSelect = (chatId: string) => {
     setChatId(chatId)
@@ -51,23 +53,39 @@ const Sidebar = ({ isSidebarCollapsed, setIsSidebarCollapsed, setIsTemplateSelec
             <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} !text-sm text-gray-300`}>New Chat</span>
           </button>
 
-          <button title="Favorited Chats" onClick={() => { setIsTemplateSelectorOpen(true) }} className="hover:bg-gray-800 rounded-md !p-2 duration-200 cursor-pointer !w-full flex items-center justify-start gap-2">
-            <StarIcon size={20} className="text-gray-300" />
-            <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} !text-sm text-gray-300`}>Favorited Chats</span>
-          </button>
+          {favorites.length > 0 && (
+            <div className="w-full flex flex-col gap-1 mt-2">
+              {favorites.map((id) => {
+                const chat = chats.find(c => c.id === id)
+                if (!chat) return null
+                return (
+                  <button key={id} title={chat.title} onClick={() => handleChatSelect(id)} className="hover:bg-gray-800 rounded-md !p-2 duration-200 cursor-pointer !w-full flex items-center justify-between gap-2">
+                    <button onClick={() => toggleFavorite(id)} title={isFavorite(id) ? 'Unfavorite' : 'Favorite'} className="p-1 cursor-pointer hover:bg-gray-700 rounded-md">
+                      <StarIcon size={16} className={`${isFavorite(id) ? 'text-yellow-400' : 'text-gray-500'}`} />
+                    </button>
+                    <span className="!text-sm !text-gray-300 text-start w-full truncate">{chat.title || id}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         <div className="w-full flex flex-col items-center justify-start gap-2 !px-4 !mt-2 text-sm font-light">
           <p className="!text-sm !text-gray-300 text-start w-full">Chats</p>
 
           <div className="w-full flex flex-col items-center justify-start">
-            {
-              chats.map((chat) => (
-                <button key={chat.id} title={chat.title} onClick={() => handleChatSelect(chat.id)} className={`hover:bg-gray-700 rounded-md !p-1.5 duration-200 cursor-pointer !w-full flex items-center justify-start ${chat.id === chatId ? 'bg-gray-800' : ''}`}>
-                  <p className="!text-sm !text-gray-300 text-start w-full truncate">{chat.title}</p>
+            {chats.map((chat) => (
+              <div key={chat.id} className="w-full group relative flex items-center gap-2 group">
+                <button title={chat.title} onClick={() => handleChatSelect(chat.id)} className={`hover:bg-gray-700 rounded-md !p-1.5 duration-200 cursor-pointer !w-full flex items-center justify-start ${chat.id === chatId ? 'bg-gray-800' : ''} relative `}>
+                  <p className="!text-sm !text-gray-300 text-start w-full !pr-5 truncate">{chat.title}</p>
                 </button>
-              ))
-            }
+
+                <button onClick={() => toggleFavorite(chat.id)} title={isFavorite(chat.id) ? 'Unfavorite' : 'Favorite'} className="p-1 absolute right-2 top-1/2 -translate-y-1/2 z-10 hidden group-hover:block cursor-pointer">
+                  <StarIcon size={16} className={isFavorite(chat.id) ? 'text-yellow-400' : 'text-gray-500'} />
+                </button>
+              </div>
+            ))}
           </div>
         </div>
 
