@@ -1,4 +1,4 @@
-import { Sparkles, Layout, HomeIcon, SidebarIcon, SquarePenIcon, StarIcon } from "lucide-react"
+import { Sparkles, Layout, HomeIcon, SidebarIcon, SquarePenIcon, StarIcon, MessageCircleIcon } from "lucide-react"
 import { Link } from "react-router-dom"
 import { listChats } from "@/hooks/useHistory"
 import { useSearchParams } from "react-router-dom"
@@ -36,14 +36,24 @@ const Sidebar = ({ isSidebarCollapsed, setIsSidebarCollapsed, setIsTemplateSelec
   }
 
   return (
-    <div className={`hidden sm:flex flex-col justify-between items-center shrink-0 transition-all duration-100 ease-in min-h-screen h-full border border-r border-gray-800 w-[var(--sidebar-width)] ${isSidebarCollapsed ? 'w-[var(--sidebar-width-collapsed)]' : 'w-[var(--sidebar-width)]'} bg-[rgba(15,15,23)]`}>
+    <div className={`hidden sm:flex flex-col items-center justify-between shrink-0 transition-all duration-100 ease-in min-h-screen h-full border border-r border-gray-800 w-[var(--sidebar-width)] ${isSidebarCollapsed ? 'w-[var(--sidebar-width-collapsed)]' : 'w-[var(--sidebar-width)]'} bg-[rgba(15,15,23)]`}>
       <div className="px-3 py-2 w-full h-full flex-1 flex flex-col justify-start items-center gap-2">
-        <div className="w-full flex items-center justify-between !px-2 !py-2 flex-wrap gap-2">
+        <div className={`w-full flex items-center justify-between !px-2 !py-2 flex-wrap gap-2 ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
           <Link title="Home" to="/" className="hover:bg-gray-800 rounded-md !p-2 duration-100 cursor-pointer">
             <HomeIcon size={24} />
           </Link>
           <button title="Collapse Sidebar" onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="hover:bg-gray-800 rounded-md !p-2 duration-100 cursor-pointer">
             <SidebarIcon size={24} />
+          </button>
+        </div>
+
+        <div className={`${isSidebarCollapsed ? 'flex' : 'hidden'} w-full flex-col items-center justify-center gap-2 !px-4 text-sm font-light`}>
+          <button title="Favorites" onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="hover:bg-gray-800 rounded-md !p-2 duration-100 cursor-pointer">
+            <StarIcon size={24} />
+          </button>
+
+          <button title="Chats" onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="hover:bg-gray-800 rounded-md !p-2 duration-100 cursor-pointer">
+            <MessageCircleIcon size={24} />
           </button>
         </div>
 
@@ -54,25 +64,28 @@ const Sidebar = ({ isSidebarCollapsed, setIsSidebarCollapsed, setIsTemplateSelec
           </button>
 
           {favorites.length > 0 && (
-            <div className="w-full flex flex-col gap-1 mt-2">
+            <div className="w-full flex flex-col items-center justify-start gap-0 !px-2 !mt-2 text-sm font-light">
+              <p className="!text-sm !text-gray-300 text-start w-full font-semibold">Favorites</p>
               {favorites.map((id) => {
                 const chat = chats.find(c => c.id === id)
                 if (!chat) return null
                 return (
-                  <button key={id} title={chat.title} onClick={() => handleChatSelect(id)} className="hover:bg-gray-800 rounded-md !p-2 duration-200 cursor-pointer !w-full flex items-center justify-between gap-2">
-                    <button onClick={() => toggleFavorite(id)} title={isFavorite(id) ? 'Unfavorite' : 'Favorite'} className="p-1 cursor-pointer hover:bg-gray-700 rounded-md">
+                  <div key={id} className="w-full flex items-center justify-between">
+                    <button onClick={() => toggleFavorite(id)} title={isFavorite(id) ? 'Unfavorite' : 'Favorite'} className="p-1 cursor-pointer rounded-md">
                       <StarIcon size={16} className={`${isFavorite(id) ? 'text-yellow-400' : 'text-gray-500'}`} />
                     </button>
-                    <span className="!text-sm !text-gray-300 text-start w-full truncate">{chat.title || id}</span>
-                  </button>
+                    <button title={chat.title} onClick={() => handleChatSelect(id)} className="hover:bg-gray-800 rounded-md !p-1.5 duration-200 cursor-pointer !w-full flex items-center justify-start gap-2">
+                      <span className="!text-sm !text-gray-300 text-start w-full truncate">{chat.title || id}</span>
+                    </button>
+                  </div>
                 )
               })}
             </div>
           )}
         </div>
 
-        <div className="w-full flex flex-col items-center justify-start gap-2 !px-4 !mt-2 text-sm font-light">
-          <p className="!text-sm !text-gray-300 text-start w-full">Chats</p>
+        <div className={`${isSidebarCollapsed ? 'hidden' : 'flex'} w-full flex-col items-center justify-start gap-2 !px-4 !mt-2 text-sm font-light`}>
+          <p className="!text-sm !text-gray-300 text-start w-full font-semibold">Chats</p>
 
           <div className="w-full flex flex-col items-center justify-start">
             {chats.map((chat) => (
