@@ -8,7 +8,7 @@ import JSONModal from "../components/JSONModal"
 import Modal from "react-modal"
 import "../components/ui/chatbot.css"
 import type { Message } from "@/hooks/useMessages"
-import useMessages from "@/hooks/useMessages"
+// Chatbot is UI-only; chat loading/persistence happens in hooks at the page level
 
 // Initialize react-modal safely
 if (typeof document !== 'undefined') {
@@ -18,8 +18,15 @@ if (typeof document !== 'undefined') {
   }
 }
 
-const Chatbot = ({ validateSolidityCode }: { validateSolidityCode: (code: string) => boolean }) => {
-  const { messages, setMessages } = useMessages()
+interface ChatbotProps {
+  validateSolidityCode: (code: string) => boolean
+  messages: Message[]
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>
+  appendUserMessage?: (content: string) => void
+  appendAiMessage?: (message: Message) => void
+}
+
+const Chatbot = ({ validateSolidityCode, messages, setMessages, appendUserMessage, appendAiMessage }: ChatbotProps) => {
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isJSONModalOpen, setIsJSONModalOpen] = useState(false)
@@ -29,6 +36,7 @@ const Chatbot = ({ validateSolidityCode }: { validateSolidityCode: (code: string
   const [isGeneratingJSON, setIsGeneratingJSON] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  
 
   const scrollToBottom = () => {
     const container = document.querySelector('.messages-container') as HTMLElement;
@@ -44,18 +52,26 @@ const Chatbot = ({ validateSolidityCode }: { validateSolidityCode: (code: string
     }
   }, [messages])
 
+  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim() || isLoading) return
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: "user",
-      content: input.trim(),
-      timestamp: new Date(),
-    }
+    // chatId always exists from page mount; first user message will cause saving to begin in useMessages
 
-    setMessages((prev) => [...prev, userMessage])
+    const userContent = input.trim()
+    if (appendUserMessage) {
+      appendUserMessage(userContent)
+    } else {
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        type: "user",
+        content: userContent,
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, userMessage])
+    }
     setInput("")
     setIsLoading(true)
 
@@ -72,15 +88,23 @@ const Chatbot = ({ validateSolidityCode }: { validateSolidityCode: (code: string
         compilationStatus: isSolidityCode ? (validateSolidityCode(response) ? "success" : "error") : undefined,
         validation: isSolidityCode ? ContractValidator.validateContract(response) : undefined,
       }
-      setMessages((prev) => [...prev, aiMessage])
-    } catch (error) {
+      if (appendAiMessage) {
+        appendAiMessage(aiMessage)
+      } else {
+        setMessages((prev) => [...prev, aiMessage])
+      }
+    } catch {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: "ai",
         content: "Sorry, I encountered an error while generating your smart contract. Please try again.",
         timestamp: new Date(),
       }
-      setMessages((prev) => [...prev, errorMessage])
+      if (appendAiMessage) {
+        appendAiMessage(errorMessage)
+      } else {
+        setMessages((prev) => [...prev, errorMessage])
+      }
     } finally {
       setIsLoading(false)
     }
@@ -157,40 +181,8 @@ const Chatbot = ({ validateSolidityCode }: { validateSolidityCode: (code: string
     }
   }
 
-  // const handleTemplateSelect = (code: string, _templateName: string) => {
-  //   const aiMessage: Message = {
-  //     id: Date.now().toString(),
-  //     type: "ai",
-  //     content: code,
-  //     timestamp: new Date(),
-  //     isCode: true,
-  //     compilationStatus: validateSolidityCode(code) ? "success" : "error",
-  //     validation: ContractValidator.validateContract(code),
-  //   }
-  //   setMessages((prev) => [...prev, aiMessage])
-  // }
-
   return (
     <div className="chatbot-container">
-      {/* <div className="chatbot-header">
-        <div className="header-content">
-          <div className="header-icon">
-            <Sparkles className="sparkles-icon" />
-          </div>
-          <div className="header-text">
-            <h2>Smart Contract Assistant</h2>
-            <p>Powered by DeepSeek AI</p>
-          </div>
-        </div>
-        <button 
-          className="template-button"
-          onClick={() => setIsTemplateSelectorOpen(true)}
-          title="Browse Templates"
-        >
-          <Layout size={20} />
-          <span>Templates</span>
-        </button>
-      </div> */}
 
       <div className="messages-container">
         {messages.map((message) => (
