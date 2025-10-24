@@ -1,8 +1,9 @@
 import { Sparkles, Layout, HomeIcon, SidebarIcon, SquarePenIcon, StarIcon, MessageCircleIcon } from "lucide-react"
 import { Link } from "react-router-dom"
-import { listChats } from "@/hooks/useHistory"
+import { listChats, deleteChat } from "@/hooks/useHistory"
 import { useSearchParams } from "react-router-dom"
 import useFavorites from "@/hooks/useFavorites"
+import ChatItem from "./ChatItem"
 
 interface SidebarProps {
   isSidebarCollapsed: boolean
@@ -33,6 +34,19 @@ const Sidebar = ({ isSidebarCollapsed, setIsSidebarCollapsed, setIsTemplateSelec
       prev.set("chatId", newChatId)
       return prev
     })
+  }
+
+  const handleDeleteChat = (id: string) => {
+    deleteChat(id)
+    // If deleting currently open chat, start a new one
+    if (id === chatId) {
+      handleNewChat()
+    } else {
+      // Force URL refresh to trigger rerender of chat list if needed
+      setSearchParams((prev: URLSearchParams) => {
+        return prev
+      })
+    }
   }
 
   return (
@@ -89,15 +103,15 @@ const Sidebar = ({ isSidebarCollapsed, setIsSidebarCollapsed, setIsTemplateSelec
 
           <div className="w-full flex flex-col items-center justify-start">
             {chats.map((chat) => (
-              <div key={chat.id} className="w-full group relative flex items-center gap-2 group">
-                <button title={chat.title} onClick={() => handleChatSelect(chat.id)} className={`hover:bg-gray-700 rounded-md !p-1.5 duration-200 cursor-pointer !w-full flex items-center justify-start ${chat.id === chatId ? 'bg-gray-800' : ''} relative `}>
-                  <p className="!text-sm !text-gray-300 text-start w-full !pr-5 truncate">{chat.title}</p>
-                </button>
-
-                <button onClick={() => toggleFavorite(chat.id)} title={isFavorite(chat.id) ? 'Unfavorite' : 'Favorite'} className="p-1 absolute right-2 top-1/2 -translate-y-1/2 z-10 hidden group-hover:block cursor-pointer">
-                  <StarIcon size={16} className={isFavorite(chat.id) ? 'text-yellow-400' : 'text-gray-500'} />
-                </button>
-              </div>
+              <ChatItem 
+                key={chat.id}
+                chat={{ id: chat.id, title: chat.title || '' }}
+                handleChatSelect={handleChatSelect}
+                chatId={chatId || ''}
+                handleDeleteChat={handleDeleteChat}
+                handleFavoriteChat={toggleFavorite}
+                isFavorite={isFavorite}
+              />
             ))}
           </div>
         </div>
