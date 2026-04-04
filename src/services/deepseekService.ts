@@ -16,20 +16,23 @@ export async function generateSmartContract(prompt: string): Promise<string> {
     try {
       // Check if API key is configured
       const apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
+      const MODEL = import.meta.env.VITE_DEEPSEEK_MODEL;
+      const BASE_URL = import.meta.env.VITE_DEEPSEEK_BASE_URL;
+      console.log('MODEL', MODEL);
       if (!apiKey || apiKey === 'sk-1234567890abcdef') {
         throw new Error('DeepSeek API key not configured. Please add VITE_DEEPSEEK_API_KEY to your .env file.');
       }
 
-      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      const response = await fetch(`${BASE_URL}/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'deepseek-chat',
-          temperature: 0.3, // Lower temperature for more consistent code generation
-          max_tokens: 4000, // Increased for longer contracts
+          model: MODEL,
+          // temperature: 0.3, // Lower temperature for more consistent code generation
+          // max_tokens: 4000, // Increased for longer contracts
           messages: [
             {
               role: 'system',
@@ -123,6 +126,8 @@ export async function generateJSONFromSolidity(solidityCode: string): Promise<JS
   try {
     // Check if API key is configured
     const apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
+    const MODEL = import.meta.env.VITE_DEEPSEEK_MODEL;
+    const BASE_URL = import.meta.env.VITE_DEEPSEEK_BASE_URL;
     if (!apiKey || apiKey === 'sk-1234567890abcdef') {
       throw new Error('DeepSeek API key not configured. Please add VITE_DEEPSEEK_API_KEY to your .env file.');
     }
@@ -141,16 +146,16 @@ Return EXACTLY:
 
 Rules: contract_name from Solidity, arguments as comma-separated values, strings with escaped quotes, numbers without quotes.`;
 
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    const response = await fetch(`${BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
               body: JSON.stringify({
-          model: 'deepseek-chat',
-          temperature: 0.1, // Very low temperature for consistent JSON generation
-          max_tokens: 3000, // Increased to ensure both sections complete
+          model: MODEL,
+          // temperature: 0.1, // Very low temperature for consistent JSON generation
+          // max_tokens: 3000, // Increased to ensure both sections complete
           messages: [
           {
             role: 'system',
