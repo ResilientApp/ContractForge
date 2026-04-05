@@ -2,7 +2,7 @@ import path from "node:path"
 import type { IncomingMessage, ServerResponse } from "node:http"
 import { defineConfig, loadEnv } from "vite"
 import react from "@vitejs/plugin-react"
-import { forwardToDeepSeek } from "./api/lib/deepseekForward"
+import { forwardToDeepSeek } from "./api/deepseek"
 
 function readJsonBody(req: IncomingMessage): Promise<unknown> {
   return new Promise((resolve, reject) => {

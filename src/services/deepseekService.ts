@@ -32,15 +32,28 @@ async function postChatCompletions(body: {
     body: JSON.stringify(body),
   });
 
-  const data = (await response.json().catch(() => ({}))) as ChatCompletionResponse & {
-    error?: string;
-  };
+  const rawText = await response.text();
+  let data: (ChatCompletionResponse & { error?: string | { message?: string } }) | Record<
+    string,
+    unknown
+  > = {};
+  try {
+    data = rawText ? (JSON.parse(rawText) as typeof data) : {};
+  } catch {
+    data = {};
+  }
 
   if (!response.ok) {
+    const errField = data && typeof data === "object" && "error" in data ? data.error : undefined;
     const msg =
-      typeof data.error === "string"
-        ? data.error
-        : `API Error: ${response.status} ${response.statusText}`;
+      typeof errField === "string"
+        ? errField
+        : typeof errField === "object" &&
+            errField !== null &&
+            "message" in errField &&
+            typeof (errField as { message: unknown }).message === "string"
+          ? (errField as { message: string }).message
+          : rawText.trim().slice(0, 300) || `API Error: ${response.status} ${response.statusText}`;
     throw new Error(msg);
   }
 

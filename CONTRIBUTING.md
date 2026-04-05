@@ -37,7 +37,7 @@ For bigger roadmap items, open a **draft PR early** or an **issue** so others ca
 | Templates | `src/templates/*.ts`, `src/components/TemplateSelector.tsx` | Starter Solidity snippets merged into prompts. |
 | Prompts | `src/Prompts/FewshotPrompts.ts` | Few-shot and instruction text for generation. |
 | Client → LLM | `src/services/deepseekService.ts` | `POST /api/deepseek` with messages; parses Solidity / JSON from responses. |
-| Server proxy (shared) | `api/lib/deepseekForward.ts` | Forwards to DeepSeek using server env vars (lives under `api/` so Vercel bundles it). |
+| Server proxy (shared) | `api/deepseek.ts` (`forwardToDeepSeek`) | Forwards to DeepSeek using server env vars; same file as the Vercel handler so the deploy bundle stays complete. |
 | Vercel handler | `api/deepseek.ts` | Production serverless entry that uses the shared forwarder. |
 | Dev API wiring | `vite.config.ts` | Middleware that serves `/api/deepseek` in development. |
 | Validation | `src/services/contractValidator.ts` | Heuristic checks on generated Solidity (not a full compiler). |
@@ -64,7 +64,7 @@ The items below are **ideas**, not a fixed priority list. Each subsection includ
 #### Streaming responses
 
 - **Goal**: Show the model reply as it arrives (token or chunk stream) instead of one long loading state.
-- **Where to start**: `src/services/deepseekService.ts` (fetch/stream parsing), `src/services/Chatbot.tsx` and `useMessages` for incremental updates. `api/lib/deepseekForward.ts` and `api/deepseek.ts` must forward streaming responses correctly (SSE or raw stream) and set appropriate headers.
+- **Where to start**: `src/services/deepseekService.ts` (fetch/stream parsing), `src/services/Chatbot.tsx` and `useMessages` for incremental updates. `api/deepseek.ts` must forward streaming responses correctly (SSE or raw stream) and set appropriate headers.
 - **Done when**: User sees text appear progressively; errors still surface clearly; non-streaming code paths can be removed or kept behind a simple flag if needed for debugging.
 
 #### “Refine this contract” actions
@@ -82,7 +82,7 @@ The items below are **ideas**, not a fixed priority list. Each subsection includ
 #### LLM provider abstraction
 
 - **Goal**: One interface (e.g. `completeChat(messages)`) with DeepSeek as the first implementation; room for OpenAI-compatible or other providers via config.
-- **Where to start**: `deepseekService.ts`, `api/lib/deepseekForward.ts` (env-driven base URL already helps). There are unused **`ai` / `@ai-sdk/*`** dependencies in `package.json`—either wire them through the abstraction or remove them in a dedicated cleanup PR.
+- **Where to start**: `deepseekService.ts`, `api/deepseek.ts` (`forwardToDeepSeek`; env-driven base URL already helps). There are unused **`ai` / `@ai-sdk/*`** dependencies in `package.json`—either wire them through the abstraction or remove them in a dedicated cleanup PR.
 - **Done when**: Swapping provider is mostly configuration + one adapter; client code does not hard-code DeepSeek URLs.
 
 ### Product and ResilientDB ecosystem

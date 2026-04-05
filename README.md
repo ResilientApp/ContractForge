@@ -87,14 +87,13 @@ npm run dev
 ### Services
 
 - **deepseekService.ts**: Calls `/api/deepseek` (browser → your backend → DeepSeek)
-- **api/deepseek.ts**: Vercel/serverless entry for `/api/deepseek`
-- **api/lib/deepseekForward.ts**: Shared proxy logic (imported by `api/deepseek.ts` and Vite dev middleware)
+- **api/deepseek.ts**: Vercel serverless handler for `/api/deepseek` plus shared `forwardToDeepSeek` (used by Vite dev middleware)
 - **contractValidator.ts**: Validates and analyzes generated contracts
 
 ### File Structure
 
 ```
-api/                     # Vercel serverless: `/api/deepseek` + shared `lib/` (bundled with the function)
+api/                     # Vercel serverless: `/api/deepseek` (single module so deploy bundles reliably)
 src/
 ├── components/          # React components (Navbar, Footer, etc.)
 ├── Pages/               # Main pages (LandingPage, ChatbotPage)
