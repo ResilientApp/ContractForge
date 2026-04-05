@@ -65,19 +65,25 @@ export async function forwardToDeepSeek(
   );
   const model = env.DEEPSEEK_MODEL || "deepseek-chat";
 
-  const response = await fetch(`${baseUrl}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      temperature: body.temperature ?? 0.3,
-      max_tokens: body.max_tokens ?? 4000,
-      messages: body.messages,
-    }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        temperature: body.temperature ?? 0.3,
+        max_tokens: body.max_tokens ?? 4000,
+        messages: body.messages,
+      }),
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Upstream request failed";
+    return { ok: false, status: 502, error: msg };
+  }
 
   const data: unknown = await response.json().catch(() => ({}));
 
