@@ -1,5 +1,5 @@
-// DeepSeek API service for smart contract generation
-import { fewShotPrompt } from '../Prompts/FewshotPrompts';
+// DeepSeek calls go through /api/deepseek so the API key stays on the server (Vercel or Vite dev middleware).
+import { fewShotPrompt } from "../Prompts/FewshotPrompts";
 
 export interface JSONGenerationResult {
   syntaxJSON: {
@@ -12,31 +12,50 @@ export interface JSONGenerationResult {
   };
 }
 
-export async function generateSmartContract(prompt: string): Promise<string> {
-    try {
-      // Check if API key is configured
-      const apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
-      const MODEL = import.meta.env.VITE_DEEPSEEK_MODEL;
-      const BASE_URL = import.meta.env.VITE_DEEPSEEK_BASE_URL;
-      console.log('MODEL', MODEL);
-      if (!apiKey || apiKey === 'sk-1234567890abcdef') {
-        throw new Error('DeepSeek API key not configured. Please add VITE_DEEPSEEK_API_KEY to your .env file.');
-      }
+type ChatMessage = {
+  role: "system" | "user" | "assistant";
+  content: string;
+};
 
-      const response = await fetch(`${BASE_URL}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: MODEL,
-          // temperature: 0.3, // Lower temperature for more consistent code generation
-          // max_tokens: 4000, // Increased for longer contracts
-          messages: [
-            {
-              role: 'system',
-              content: `You are ContractForge, a helpful AI assistant specialized in smart contracts for ResilientDB. 
+interface ChatCompletionResponse {
+  choices?: Array<{ message?: { content?: string } }>;
+}
+
+async function postChatCompletions(body: {
+  messages: ChatMessage[];
+  temperature?: number;
+  max_tokens?: number;
+}): Promise<ChatCompletionResponse> {
+  const response = await fetch("/api/deepseek", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  const data = (await response.json().catch(() => ({}))) as ChatCompletionResponse & {
+    error?: string;
+  };
+
+  if (!response.ok) {
+    const msg =
+      typeof data.error === "string"
+        ? data.error
+        : `API Error: ${response.status} ${response.statusText}`;
+    throw new Error(msg);
+  }
+
+  return data;
+}
+
+export async function generateSmartContract(prompt: string): Promise<string> {
+  try {
+    const data = await postChatCompletions({
+      temperature: 0.3,
+      max_tokens: 4000,
+      messages: [
+        {
+          role: "system",
+          content: `You are ContractForge, a helpful AI assistant specialized in smart contracts for ResilientDB. 
 
 You can:
 1. **Generate Solidity smart contracts** when users ask for contract creation
@@ -53,86 +72,75 @@ When generating contracts:
 - Optimize for gas efficiency
 
 For contract requests: Return clean, compilable Solidity code without markdown formatting.
-For explanations and discussions: Respond conversationally and helpfully.`
-            },
-            {
-              role: 'user',
-              content: fewShotPrompt(prompt)
-            }
-          ]
-        })
-      });
+For explanations and discussions: Respond conversationally and helpfully.`,
+        },
+        {
+          role: "user",
+          content: fewShotPrompt(prompt),
+        },
+      ],
+    });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorData.error?.message || ''}`);
-      }
+    const content = data.choices?.[0]?.message?.content;
 
-      const data = await response.json();
-      const content = data.choices?.[0]?.message?.content;
-      
-      if (!content) {
-        throw new Error('No content received from API');
-      }
-
-      // Clean up the response to ensure it's just Solidity code
-      let cleanedContent = content.trim();
-      
-      // Remove markdown code blocks if present
-      if (cleanedContent.startsWith('```solidity')) {
-        cleanedContent = cleanedContent.replace(/^```solidity\n/, '').replace(/\n```$/, '');
-      } else if (cleanedContent.startsWith('```')) {
-        cleanedContent = cleanedContent.replace(/^```\n/, '').replace(/\n```$/, '');
-      }
-      
-      // Remove any explanatory text before the pragma statement
-      const pragmaIndex = cleanedContent.indexOf('pragma solidity');
-      if (pragmaIndex > 0) {
-        cleanedContent = cleanedContent.substring(pragmaIndex);
-      }
-
-      return cleanedContent;
-
-    } catch (error) {
-      console.error("Error generating smart contract:", error);
-      
-      if (error instanceof Error && error.message.includes('API key not configured')) {
-        return `🔑 **API Key Missing**
-
-I need your DeepSeek API key to work properly. Please:
-
-1. Create a .env file in your project root
-2. Add: VITE_DEEPSEEK_API_KEY=your_actual_api_key_here
-3. Restart your development server
-
-You can get a DeepSeek API key from: https://platform.deepseek.com/`;
-      }
-
-      return `❌ **Connection Error**
-
-I'm having trouble connecting to my AI service. This could be due to:
-
-• Network connectivity issues
-• Invalid API key
-• API service temporarily unavailable
-
-**Error details:** ${error instanceof Error ? error.message : 'Unknown error'}
-
-Please check your internet connection and API configuration, then try again.`;
+    if (!content) {
+      throw new Error("No content received from API");
     }
+
+    let cleanedContent = content.trim();
+
+    if (cleanedContent.startsWith("```solidity")) {
+      cleanedContent = cleanedContent.replace(/^```solidity\n/, "").replace(/\n```$/, "");
+    } else if (cleanedContent.startsWith("```")) {
+      cleanedContent = cleanedContent.replace(/^```\n/, "").replace(/\n```$/, "");
+    }
+
+    const pragmaIndex = cleanedContent.indexOf("pragma solidity");
+    if (pragmaIndex > 0) {
+      cleanedContent = cleanedContent.substring(pragmaIndex);
+    }
+
+    return cleanedContent;
+  } catch (error) {
+    console.error("Error generating smart contract:", error);
+
+    const message = error instanceof Error ? error.message : "Unknown error";
+
+    if (
+      message.includes("DEEPSEEK_API_KEY") ||
+      message.includes("not configured on the server")
+    ) {
+      return `🔑 **API key not configured (server)**
+
+The app calls DeepSeek through a secure **server route** (\`/api/deepseek\`). Configure the key there—not in the browser.
+
+**Local development:** add to \`.env\` (same folder as \`package.json\`):
+
+\`\`\`
+DEEPSEEK_API_KEY=your_key_here
+DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+DEEPSEEK_MODEL=deepseek-chat
+\`\`\`
+
+Restart \`npm run dev\`. Do **not** use \`VITE_DEEPSEEK_API_KEY\` for production; it would expose the key in client JavaScript.
+
+**Vercel:** Project → Settings → Environment Variables → add \`DEEPSEEK_API_KEY\` (and optionally \`DEEPSEEK_BASE_URL\`, \`DEEPSEEK_MODEL\`).
+
+Get a key: https://platform.deepseek.com/`;
+    }
+
+    return `❌ **Connection Error**
+
+I'm having trouble reaching the AI service. This could be due to network issues, an invalid key on the server, or the API being temporarily unavailable.
+
+**Error details:** ${message}
+
+Please check your configuration and try again.`;
+  }
 }
-  
-export async function generateJSONFromSolidity(solidityCode: string): Promise<JSONGenerationResult> {
-  try {
-    // Check if API key is configured
-    const apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
-    const MODEL = import.meta.env.VITE_DEEPSEEK_MODEL;
-    const BASE_URL = import.meta.env.VITE_DEEPSEEK_BASE_URL;
-    if (!apiKey || apiKey === 'sk-1234567890abcdef') {
-      throw new Error('DeepSeek API key not configured. Please add VITE_DEEPSEEK_API_KEY to your .env file.');
-    }
 
-    const jsonPrompt = `
+export async function generateJSONFromSolidity(solidityCode: string): Promise<JSONGenerationResult> {
+  const jsonPrompt = `
 Generate JSON for this contract:
 
 \`\`\`solidity
@@ -146,108 +154,92 @@ Return EXACTLY:
 
 Rules: contract_name from Solidity, arguments as comma-separated values, strings with escaped quotes, numbers without quotes.`;
 
-    const response = await fetch(`${BASE_URL}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-              body: JSON.stringify({
-          model: MODEL,
-          // temperature: 0.1, // Very low temperature for consistent JSON generation
-          // max_tokens: 3000, // Increased to ensure both sections complete
-          messages: [
-          {
-            role: 'system',
-            content: 'You are a Solidity-to-ResilientDB JSON converter. Generate JSON configurations in the specified format.'
-          },
-          {
-            role: 'user',
-            content: jsonPrompt
-          }
-        ]
-      })
+  try {
+    const data = await postChatCompletions({
+      temperature: 0.1,
+      max_tokens: 3000,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a Solidity-to-ResilientDB JSON converter. Generate JSON configurations in the specified format.",
+        },
+        {
+          role: "user",
+          content: jsonPrompt,
+        },
+      ],
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorData.error?.message || ''}`);
-    }
-
-    const data = await response.json();
     const content = data.choices?.[0]?.message?.content;
-    
+
     if (!content) {
-      throw new Error('No content received from API');
+      throw new Error("No content received from API");
     }
 
-    // Parse the response to extract JSON section
     const exampleMatch = content.match(/===EXAMPLE_JSON===\n([\s\S]*?)(?=\n|$)/);
 
     if (!exampleMatch) {
-      console.error('Full AI Response:', content);
-      throw new Error('Invalid response format: missing EXAMPLE_JSON section');
+      console.error("Full AI Response:", content);
+      throw new Error("Invalid response format: missing EXAMPLE_JSON section");
     }
 
     const exampleJSONStr = exampleMatch[1].trim();
-    console.log('Raw Example JSON:', exampleJSONStr);
-    
-    // Remove any markdown code blocks if present
-    let cleanExampleJSON = exampleJSONStr.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-    
-    // Fix common JSON formatting issues
-    cleanExampleJSON = cleanExampleJSON.replace(/^\s*{\s*/, '{').replace(/\s*}\s*$/, '}');
-    
-    console.log('Cleaned Example JSON:', cleanExampleJSON);
-    
-    // Check if example JSON is incomplete
-    if (!exampleJSONStr.includes('}') || exampleJSONStr.length < 10) {
-      console.error('Example JSON is incomplete:', exampleJSONStr);
-      throw new Error('AI response incomplete: Example JSON section is not properly formatted');
+
+    let cleanExampleJSON = exampleJSONStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
+
+    cleanExampleJSON = cleanExampleJSON.replace(/^\s*{\s*/, "{").replace(/\s*}\s*$/, "}");
+
+    if (!exampleJSONStr.includes("}") || exampleJSONStr.length < 10) {
+      console.error("Example JSON is incomplete:", exampleJSONStr);
+      throw new Error("AI response incomplete: Example JSON section is not properly formatted");
     }
-    
-    let exampleJSON;
+
+    let exampleJSON: { contract_name?: string; arguments?: string };
     try {
-      exampleJSON = JSON.parse(cleanExampleJSON);
+      exampleJSON = JSON.parse(cleanExampleJSON) as { contract_name?: string; arguments?: string };
     } catch (parseError) {
-      console.error('JSON Parse Error - Example:', cleanExampleJSON);
-      
-      // Try to fix common JSON issues
+      console.error("JSON Parse Error - Example:", cleanExampleJSON);
+
       try {
-        // Remove any trailing commas
-        const fixedExample = cleanExampleJSON.replace(/,(\s*[}\]])/g, '$1');
-        exampleJSON = JSON.parse(fixedExample);
-      } catch (secondError) {
-        throw new Error(`JSON parsing failed: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
+        const fixedExample = cleanExampleJSON.replace(/,(\s*[}\]])/g, "$1");
+        exampleJSON = JSON.parse(fixedExample) as { contract_name?: string; arguments?: string };
+      } catch {
+        throw new Error(
+          `JSON parsing failed: ${parseError instanceof Error ? parseError.message : "Unknown error"}`,
+        );
       }
     }
 
-    // Validate JSON structure
-    if (!exampleJSON.contract_name || typeof exampleJSON.arguments !== 'string') {
-      throw new Error('Invalid EXAMPLE_JSON structure');
+    if (!exampleJSON.contract_name || typeof exampleJSON.arguments !== "string") {
+      throw new Error("Invalid EXAMPLE_JSON structure");
     }
 
     return {
-      syntaxJSON: exampleJSON, // Use the same JSON for both sections
-      exampleJSON
+      syntaxJSON: exampleJSON as JSONGenerationResult["syntaxJSON"],
+      exampleJSON: exampleJSON as JSONGenerationResult["exampleJSON"],
     };
-
   } catch (error) {
     console.error("Error generating JSON from Solidity:", error);
-    
-    if (error instanceof Error && error.message.includes('API key not configured')) {
-      throw new Error('DeepSeek API key not configured. Please add VITE_DEEPSEEK_API_KEY to your .env file.');
+
+    if (error instanceof Error && error.message.includes("Invalid response format")) {
+      throw new Error("Failed to parse AI response. Please try again.");
     }
 
-    if (error instanceof Error && error.message.includes('Invalid response format')) {
-      throw new Error('Failed to parse AI response. Please try again.');
-    }
-
-    if (error instanceof Error && error.message.includes('JSON parsing failed')) {
+    if (error instanceof Error && error.message.includes("JSON parsing failed")) {
       throw new Error(`JSON parsing failed: ${error.message}. Please try again.`);
     }
 
-    throw new Error(`JSON generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    if (
+      error instanceof Error &&
+      (error.message.includes("DEEPSEEK_API_KEY") ||
+        error.message.includes("not configured on the server"))
+    ) {
+      throw new Error(
+        "DeepSeek API key is not configured on the server. Add DEEPSEEK_API_KEY to .env (local) or Vercel environment variables.",
+      );
+    }
+
+    throw new Error(`JSON generation failed: ${error instanceof Error ? error.message : "Unknown error"}`);
   }
 }
-  

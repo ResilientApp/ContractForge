@@ -46,18 +46,19 @@ npm run dev
 
 1. **Get your API key**: Sign up at [DeepSeek Platform](https://platform.deepseek.com/) and get your API key
 
-2. **Configure the API key** in one of these ways:
+2. **Configure server-side environment variables** (the key is **never** embedded in client JavaScript):
 
-   **Option A: Environment variables**
+   **Local development (`npm run dev`)** — create a `.env` file in the project root:
    ```bash
-   # Create a .env file in the project root
-   VITE_DEEPSEEK_API_KEY=your_actual_deepseek_api_key_here
-   VITE_DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
-   VITE_DEEPSEEK_MODEL=deepseek-chat
+   DEEPSEEK_API_KEY=your_actual_deepseek_api_key_here
+   DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+   DEEPSEEK_MODEL=deepseek-chat
    ```
+   Vite serves `/api/deepseek` in dev and injects these values only on the server side of that route.
 
-   **Option B: Direct configuration**
-   - Edit the relevant service file in `src/services/` to include your API key (not recommended for production).
+   **Production (e.g. Vercel)** — add the same variables in the host’s environment settings (**without** the `VITE_` prefix). The app uses the serverless route at `api/deepseek.ts`, which reads `process.env.DEEPSEEK_API_KEY`.
+
+   Do **not** put your real API key in `VITE_*` variables for a public deployment; those are exposed in the browser bundle.
 
 ### Using the Generator
 
@@ -85,12 +86,16 @@ npm run dev
 
 ### Services
 
-- **deepseekService.ts**: Handles communication with DeepSeek API
+- **deepseekService.ts**: Calls `/api/deepseek` (browser → your backend → DeepSeek)
+- **api/deepseek.ts**: Vercel/serverless proxy that holds the API key
+- **server/deepseekForward.ts**: Shared proxy logic (also used by Vite dev middleware)
 - **contractValidator.ts**: Validates and analyzes generated contracts
 
 ### File Structure
 
 ```
+api/                     # Vercel serverless: secure DeepSeek proxy
+server/                  # Shared server logic for dev + production
 src/
 ├── components/          # React components (Navbar, Footer, etc.)
 ├── Pages/               # Main pages (LandingPage, ChatbotPage)
@@ -113,15 +118,17 @@ The application is configured to use DeepSeek's API for smart contract generatio
 - **Error handling** with user feedback
 - **Response parsing** to extract contract details and convert to ResilientDB format
 
-### API Configuration
+### API configuration
 
-The DeepSeek integration is configured via environment variables or directly in the service file:
+The browser only calls `/api/deepseek`. That route must have access to:
 
 ```env
-VITE_DEEPSEEK_API_KEY=your_api_key_here
-VITE_DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
-VITE_DEEPSEEK_MODEL=deepseek-chat
+DEEPSEEK_API_KEY=your_api_key_here
+DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+DEEPSEEK_MODEL=deepseek-chat
 ```
+
+`npm run preview` serves static files only and does **not** run the dev API middleware. For a local production-like test, use [`vercel dev`](https://vercel.com/docs/cli/dev) or deploy to Vercel.
 
 ## 🎨 Customization
 
@@ -242,7 +249,7 @@ This project is licensed under the MIT License.
 If you encounter any issues:
 
 1. Check the browser console for errors
-2. Verify your DeepSeek API key is correct
+2. Verify `DEEPSEEK_API_KEY` is set for the server (`.env` locally, or Vercel project env vars)
 3. Ensure you have a stable internet connection
 4. Check the DeepSeek API status page
 
